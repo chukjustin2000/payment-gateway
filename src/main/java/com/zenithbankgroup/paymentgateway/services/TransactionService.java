@@ -12,6 +12,6 @@ public interface TransactionService {
 
     TransactionResponse initiateService(TransactionRequest transactionRequest);
     TransactionResponse getTransactionStatus(Long id);
-    TransactionResponse updateTransactionStatus(Long id, String status);
+    TransactionResponse updateTransactionStatus(String transactionId, String status);
 
 }

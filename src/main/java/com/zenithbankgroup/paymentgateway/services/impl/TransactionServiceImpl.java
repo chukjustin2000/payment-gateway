@@ -8,6 +8,9 @@ import com.zenithbankgroup.paymentgateway.request.TransactionRequest;
 import com.zenithbankgroup.paymentgateway.response.TransactionResponse;
 import com.zenithbankgroup.paymentgateway.services.TransactionService;
 import com.zenithbankgroup.paymentgateway.utils.ModelMapperUtils;
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.UUID;
 import org.apache.commons.lang3.EnumUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ import org.springframework.stereotype.Service;
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
+
 
     public TransactionServiceImpl(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
@@ -39,8 +43,12 @@ public class TransactionServiceImpl implements TransactionService {
                 .recipientName(transactionRequest.getRecipientName())
                 .sourceBank(transactionRequest.getSourceBank())
                 .destinationBank(transactionRequest.getDestinationBank())
+                .sourceAccount(transactionRequest.getSourceAccount())
                 .reference(transactionRequest.getReference())
                 .senderName(transactionRequest.getSenderName())
+                .transactionId(UUID.randomUUID().toString())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build());
 
         return ModelMapperUtils.map(transaction, TransactionResponse.class);
@@ -48,6 +56,9 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public TransactionResponse getTransactionStatus(Long id) {
+        if (Objects.isNull(id)) {
+            throw new CustomException("Missing ID", HttpStatus.UNAUTHORIZED);
+        }
         Transaction transaction = transactionRepository.findById(id).orElseThrow(()->
                 new CustomException("Transaction not found", HttpStatus.NOT_FOUND));
 
@@ -55,13 +66,28 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public TransactionResponse updateTransactionStatus(Long id, String status) {
+    public TransactionResponse updateTransactionStatus(String transactionId, String status) {
+        if (Objects.isNull(transactionId)) {
+            throw new CustomException("Missing ID", HttpStatus.UNAUTHORIZED);
+        }
+
+        if (Objects.isNull(status)) {
+            throw new CustomException("Missing status", HttpStatus.BAD_REQUEST);
+        }
+
         if(!EnumUtils.isValidEnumIgnoreCase(TransactionStatus.class, status)){
             throw  new CustomException("Invalid Transaction Status", HttpStatus.NOT_ACCEPTABLE);
         }
-        Transaction transaction = transactionRepository.findById(id).orElseThrow(()->
+        Transaction transaction = transactionRepository.findByTransactionId(transactionId).orElseThrow(()->
                 new CustomException("Transaction not found", HttpStatus.NOT_FOUND));
 
-        return ModelMapperUtils.map(transaction, TransactionResponse.class);
+        transaction.setStatus(TransactionStatus.valueOf(status.toUpperCase()));
+        transaction.setUpdatedAt(LocalDateTime.now());
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+
+
+        return ModelMapperUtils.map(savedTransaction, TransactionResponse.class);
     }
 }

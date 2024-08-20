@@ -1,6 +1,7 @@
 package com.zenithbankgroup.paymentgateway.response;
 
 import com.zenithbankgroup.paymentgateway.enums.TransactionStatus;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,4 +33,7 @@ public class TransactionResponse {
     private String senderName;
     private String destinationBank;
     private String sourceBank;
+    private String transactionId;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

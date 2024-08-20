@@ -1,6 +1,7 @@
 package com.zenithbankgroup.paymentgateway.request;
 
 import com.zenithbankgroup.paymentgateway.enums.TransactionStatus;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,7 +22,6 @@ import lombok.ToString;
 @ToString
 public class TransactionRequest {
     private Long id;
-    private TransactionStatus status;
     private Double amount;
     private String reference;
     private String description;

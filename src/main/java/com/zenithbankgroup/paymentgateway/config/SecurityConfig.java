@@ -2,9 +2,15 @@ package com.zenithbankgroup.paymentgateway.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -17,23 +23,42 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+        http.csrf().disable()
                 .authorizeHttpRequests((authorize) -> {
-                    authorize.requestMatchers("/error").permitAll();
+                    authorize.requestMatchers("/v3/api-docs").permitAll();
+                    authorize.requestMatchers("api/transactions/**").permitAll();
                     authorize.anyRequest().authenticated();
                 })
-                .formLogin(formLogin -> formLogin.loginPage("/login").permitAll());
+                .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }
 
     @Bean
-    public InMemoryUserDetailsManager userDetailsService() {
-        return new InMemoryUserDetailsManager(User.withUsername("user")
-                .password("password").roles("USER").build());
+    public UserDetailsService userDetailsService(){
+
+        UserDetails ify = User.builder()
+                .username("ify")
+                .password(passwordEncoder().encode("ify"))
+                .roles("USER")
+                .build();
+
+        UserDetails chuks = User.builder()
+                .username("chuks")
+                .password(passwordEncoder().encode("chuks"))
+                .roles("ADMIN")
+                .build();
+
+        return new InMemoryUserDetailsManager(chuks,ify);
     }
 }

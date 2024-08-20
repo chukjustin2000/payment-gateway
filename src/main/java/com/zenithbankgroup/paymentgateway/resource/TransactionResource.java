@@ -7,6 +7,7 @@ import com.zenithbankgroup.paymentgateway.services.TransactionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,17 +34,19 @@ public class TransactionResource {
     }
 
     @PostMapping
-    public ResponseEntity<AppResponse<TransactionResponse>> initiateTransaction(@RequestBody TransactionRequest transactionRequest){
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ResponseEntity<AppResponse<TransactionResponse>> initiateTransaction(@RequestBody(required = false) TransactionRequest transactionRequest){
         TransactionResponse transactionResponse = transactionService.initiateService(transactionRequest);
         return  ResponseEntity.ok().body(AppResponse.<TransactionResponse>builder()
-                        .message("sucess")
+                        .message("success")
                         .data(transactionResponse)
-                        .status(HttpStatus.OK.value())
+                        .status(HttpStatus.CREATED.value())
                     .build());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AppResponse<TransactionResponse>> getTransactionStatus(Long id){
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+    public ResponseEntity<AppResponse<TransactionResponse>> getTransactionStatus(@PathVariable Long id){
         TransactionResponse transactionResponse = transactionService.getTransactionStatus(id);
         return ResponseEntity.ok().body(AppResponse.<TransactionResponse>builder()
                         .data(transactionResponse)
@@ -53,9 +56,11 @@ public class TransactionResource {
 
     }
 
-    @PostMapping("/{id}/status")
-    public ResponseEntity<AppResponse<TransactionResponse>> updateTransactionStatus(@PathVariable Long id, @RequestParam String status) {
-        TransactionResponse transactionResponse = transactionService.updateTransactionStatus(id,status);
+    //http://localhost:8080/api/transactions/fae3955b-35c6-4b46-bd0a-feb23b327144/status?status=successful
+    @PostMapping("/{transactionId}/status")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<AppResponse<TransactionResponse>> updateTransactionStatus(@PathVariable String transactionId, @RequestParam String status) {
+        TransactionResponse transactionResponse = transactionService.updateTransactionStatus(transactionId,status);
         return ResponseEntity.ok().body(AppResponse.<TransactionResponse>builder()
                 .data(transactionResponse)
                 .message("Transaction Status updated")

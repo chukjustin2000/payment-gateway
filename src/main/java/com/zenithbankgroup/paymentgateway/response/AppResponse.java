@@ -21,5 +21,6 @@ public class AppResponse <T> implements Serializable {
     private T data;
     private String message;
     private int status;
+    private Object error;
 
 }
